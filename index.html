@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>İşSiz.gov — Məşğulluq alt sistemi</title>
+<style>
+:root{--bg:#f3f6f9;--card:#fff;--ink:#14212e;--mut:#5b6b7a;--line:#d5dee6;--pri:#0a4a7c;--pri2:#0092bc;--ok:#13804a;--red:#c8102e}
+@media(prefers-color-scheme:dark){:root{--bg:#0d151d;--card:#15212c;--ink:#e6edf3;--mut:#93a4b4;--line:#27394a;--pri:#4aa8e0;--pri2:#2fb6dc;--ok:#42c386;--red:#ff6b7d}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 "Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--pri);color:#fff;padding:18px 20px;border-bottom:4px solid var(--pri2)}
+header h1{margin:0;font-size:1.5rem;letter-spacing:.2px}
+header p{margin:2px 0 0;opacity:.85;font-size:.92rem}
+.wrap{max-width:900px;margin:0 auto;padding:20px}
+.roles{display:flex;gap:10px;margin-bottom:18px}
+.roles button{flex:1;padding:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer}
+.roles button[aria-pressed=true]{border-color:var(--pri2);background:var(--pri);color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--pri2);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:1.2rem}
+.card .sub{color:var(--mut);margin:0 0 16px;font-size:.92rem}
+.steps{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto}
+.steps button{flex:1;min-width:92px;padding:9px 6px;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:6px;font-size:.82rem;cursor:pointer}
+.steps button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.steps button.done{border-color:var(--ok);color:var(--ok)}
+label{display:block;font-weight:600;margin:12px 0 4px;font-size:.92rem}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{min-height:90px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.row{grid-template-columns:1fr}.roles{flex-direction:column}}
+.btn{margin-top:16px;padding:11px 20px;border:0;border-radius:6px;background:var(--pri);color:#fff;font-weight:600;cursor:pointer;font-size:1rem}
+.btn.sec{background:transparent;color:var(--pri);border:1px solid var(--pri)}
+.btn.red{background:var(--red)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.msg{margin-top:12px;padding:10px 12px;border-radius:6px;font-size:.92rem;display:none}
+.msg.ok{display:block;background:#e3f4ea;color:#0d5c34}
+.msg.err{display:block;background:#fde8eb;color:#9b0d24}
+@media(prefers-color-scheme:dark){.msg.ok{background:#12372a;color:#8be0b3}.msg.err{background:#3a1820;color:#ff9aa8}}
+.salary{font-size:1.6rem;font-weight:700;color:var(--pri);margin:6px 0}
+.hint{color:var(--mut);font-size:.85rem}
+.item{border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:10px}
+.item b{display:block}
+.tag{display:inline-block;padding:2px 9px;border-radius:12px;font-size:.78rem;font-weight:600;background:var(--bg);border:1px solid var(--line)}
+.tag.g{color:var(--ok);border-color:var(--ok)}.tag.r{color:var(--red);border-color:var(--red)}.tag.b{color:var(--pri);border-color:var(--pri)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tabs button{padding:8px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;cursor:pointer;font-size:.88rem}
+.tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+details{border-bottom:1px solid var(--line);padding:10px 0}summary{cursor:pointer;font-weight:600}
+.hidden{display:none!important}
+footer{text-align:center;color:var(--mut);font-size:.8rem;padding:20px}
+</style>
+</head>
+<body>
+<header>
+  <h1>İşSiz.gov</h1>
+  <p>Məşğulluq xidmətləri portalı — iş axtaranlar və işəgötürənlər üçün</p>
+</header>
+
+<div class="wrap">
+  <div class="roles" role="group" aria-label="Rol seçimi">
+    <button id="r-seeker" aria-pressed="true" onclick="setRole('seeker')">İş axtaran</button>
+    <button id="r-employer" aria-pressed="false" onclick="setRole('employer')">İşəgötürən</button>
+  </div>
+
+  <!-- ================= İŞ AXTARAN (Mərhələ 1–5) ================= -->
+  <section id="seeker">
+    <div class="steps" id="steps"></div>
+
+    <!-- Mərhələ 1 -->
+    <div class="card step" data-s="1">
+      <h2>Mərhələ 1 — Qeydiyyat</h2>
+      <p class="sub">FİN və istifadəçi adı daxil edin, sonra məlumatları MyGov-dan çəkin.</p>
+      <div class="row">
+        <div><label for="fin">FİN (7 simvol)</label><input id="fin" maxlength="7" placeholder="1ABC2DE" autocomplete="off"></div>
+        <div><label for="uname">İstifadəçi adı</label><input id="uname" placeholder="istifadeci_adi" autocomplete="username"></div>
+      </div>
+      <div class="actions"><button class="btn" onclick="mygov()">MyGov-dan məlumatları gətir</button></div>
+      <div id="m1" class="msg"></div>
+      <div id="mygovBox" class="item hidden"></div>
+      <div class="actions"><button class="btn" id="next1" onclick="goStep(2)" disabled>Növbəti</button></div>
+    </div>
+
+    <!-- Mərhələ 2 -->
+    <div class="card step hidden" data-s="2">
+      <h2>Mərhələ 2 — Təhsil məlumatları</h2>
+      <p class="sub">Təhsil məlumatını və onu təsdiq edən sənədi (PDF) əlavə edin.</p>
+      <div class="row">
+        <div><label for="degree">Təhsil səviyyəsi</label>
+          <select id="degree"><option value="">Seçin</option><option>Orta təhsil</option><option>Peşə təhsili</option><option>Orta ixtisas</option><option>Bakalavr</option><option>Magistr</option><option>Doktorantura</option></select></div>
+        <div><label for="uni">Təhsil müəssisəsi</label><input id="uni"></div>
+        <div><label for="major">İxtisas</label><input id="major"></div>
+        <div><label for="gradYear">Bitirmə ili</label><input id="gradYear" type="number" min="1960" max="2035"></div>
+      </div>
+      <label for="diploma">Təsdiqedici sənəd (yalnız PDF, maks. 5 MB)</label>
+      <input id="diploma" type="file" accept="application/pdf,.pdf">
+      <div id="m2" class="msg"></div>
+      <div class="actions"><button class="btn sec" onclick="goStep(1)">Geri</button><button class="btn" onclick="saveEdu()">Yadda saxla</button></div>
+    </div>
+
+    <!-- Mərhələ 3 -->
+    <div class="card step hidden" data-s="3">
+      <h2>Mərhələ 3 — CV və iş təcrübəsi</h2>
+      <p class="sub">CV faylınızı yükləyin və iş təcrübənizi əlavə edin.</p>
+      <label for="cv">CV (PDF və ya DOCX, maks. 5 MB)</label>
+      <input id="cv" type="file" accept=".pdf,.doc,.docx">
+      <div class="row">
+        <div><label for="company">Şirkət</label><input id="company"></div>
+        <div><label for="pos">Vəzifə</label><input id="pos"></div>
+        <div><label for="from">Başlama tarixi</label><input id="from" type="month"></div>
+        <div><label for="to">Bitmə tarixi</label><input id="to" type="month"></div>
+      </div>
+      <label for="duty">Vəzifə öhdəlikləri</label><textarea id="duty"></textarea>
+      <div class="actions"><button class="btn sec" onclick="addExp()">+ Təcrübə əlavə et</button></div>
+      <div id="expList"></div>
+      <div id="m3" class="msg"></div>
+      <div class="actions"><button class="btn sec" onclick="goStep(2)">Geri</button><button class="btn" onclick="saveCV()">Yadda saxla</button></div>
+    </div>
+
+    <!-- Mərhələ 4 -->
+    <div class="card step hidden" data-s="4">
+      <h2>Mərhələ 4 — Axtarılan iş sahəsi və vəzifə</h2>
+      <p class="sub">Hansı sahədə və hansı vəzifədə işləmək istədiyinizi seçin.</p>
+      <div class="row">
+        <div><label for="field">İş sahəsi</label><select id="field" onchange="fillPos('field','position')"></select></div>
+        <div><label for="position">Vəzifə</label><select id="position"></select></div>
+        <div><label for="schedule">İş rejimi</label><select id="schedule"><option>Tam ştat</option><option>Yarım ştat</option><option>Distant</option><option>Hibrid</option><option>Müvəqqəti</option></select></div>
+        <div><label for="city">Region</label><select id="city"><option>Bakı</option><option>Gəncə</option><option>Sumqayıt</option><option>Naxçıvan</option><option>Lənkəran</option><option>Digər</option></select></div>
+      </div>
+      <div id="m4" class="msg"></div>
+      <div class="actions"><button class="btn sec" onclick="goStep(3)">Geri</button><button class="btn" onclick="savePref()">Yadda saxla</button></div>
+    </div>
+
+    <!-- Mərhələ 5 -->
+    <div class="card step hidden" data-s="5">
+      <h2>Mərhələ 5 — Maaş gözləntisi</h2>
+      <p class="sub">Aylıq gözlədiyiniz maaşı 400–5000 AZN aralığında seçin.</p>
+      <div class="salary"><span id="salVal">1000</span> AZN</div>
+      <input id="sal" type="range" min="400" max="5000" step="50" value="1000" oninput="salChange()" aria-label="Maaş gözləntisi">
+      <div class="row"><div><label for="salNum">Dəqiq məbləğ</label><input id="salNum" type="number" min="400" max="5000" value="1000" oninput="salNumChange()"></div></div>
+      <p id="salNote" class="hint"></p>
+      <div id="m5" class="msg"></div>
+      <div class="actions"><button class="btn sec" onclick="goStep(4)">Geri</button><button class="btn" onclick="finishSeeker()">Profili tamamla</button></div>
+    </div>
+
+    <div id="profile" class="card hidden"></div>
+  </section>
+
+  <!-- ================= İŞƏGÖTÜRƏN (Mərhələ 6–12) ================= -->
+  <section id="employer" class="hidden">
+    <div class="tabs" id="etabs"></div>
+
+    <!-- 6 -->
+    <div class="card etab" data-t="6">
+      <h2>Mərhələ 6 — Vakansiya yerləşdirmə</h2>
+      <p class="sub">Yeni vakansiya elanı yaradın.</p>
+      <div class="row">
+        <div><label for="vOrg">Təşkilat</label><input id="vOrg"></div>
+        <div><label for="vTitle">Vakansiya adı</label><input id="vTitle"></div>
+        <div><label for="vField">İş sahəsi</label><select id="vField" onchange="fillPos('vField','vPos')"></select></div>
+        <div><label for="vPos">Vəzifə</label><select id="vPos"></select></div>
+        <div><label for="vMin">Minimum maaş (AZN)</label><input id="vMin" type="number" min="400" max="5000" value="600"></div>
+        <div><label for="vMax">Maksimum maaş (AZN)</label><input id="vMax" type="number" min="400" max="5000" value="1200"></div>
+        <div><label for="vDeg">Minimum təhsil</label><select id="vDeg"><option>Orta təhsil</option><option>Peşə təhsili</option><option>Orta ixtisas</option><option>Bakalavr</option><option>Magistr</option></select></div>
+        <div><label for="vExp">Minimum təcrübə (il)</label><input id="vExp" type="number" min="0" max="30" value="0"></div>
+        <div><label for="vDead">Son müraciət tarixi</label><input id="vDead" type="date"></div>
+      </div>
+      <label for="vDesc">Tələblər və öhdəliklər</label><textarea id="vDesc"></textarea>
+      <div id="m6" class="msg"></div>
+      <div class="actions"><button class="btn" onclick="addVac()">Vakansiyanı yerləşdir</button></div>
+      <div id="vacList"></div>
+    </div>
+
+    <!-- 7 -->
+    <div class="card etab hidden" data-t="7">
+      <h2>Mərhələ 7 — Namizəd axtarışı</h2>
+      <p class="sub">İş axtaranların profilləri arasında filtrlə axtarış edin.</p>
+      <div class="row">
+        <div><label for="sField">İş sahəsi</label><select id="sField"></select></div>
+        <div><label for="sDeg">Minimum təhsil</label><select id="sDeg"><option value="0">Hamısı</option><option value="1">Orta təhsil</option><option value="2">Peşə təhsili</option><option value="3">Orta ixtisas</option><option value="4">Bakalavr</option><option value="5">Magistr</option><option value="6">Doktorantura</option></select></div>
+        <div><label for="sMax">Maksimum maaş gözləntisi (AZN)</label><input id="sMax" type="number" min="400" max="5000" value="5000"></div>
+        <div><label for="sCity">Region</label><select id="sCity"><option value="">Hamısı</option><option>Bakı</option><option>Gəncə</option><option>Sumqayıt</option><option>Naxçıvan</option><option>Lənkəran</option><option>Digər</option></select></div>
+      </div>
+      <div class="actions"><button class="btn" onclick="searchCand()">Axtar</button></div>
+      <div id="candList"></div>
+    </div>
+
+    <!-- 8 -->
+    <div class="card etab hidden" data-t="8">
+      <h2>Mərhələ 8 — İşə qəbul statusu</h2>
+      <p class="sub">Namizədin statusunu dəyişin; iş axtaran bildiriş alır.</p>
+      <div id="statusList"></div>
+    </div>
+
+    <!-- 9 -->
+    <div class="card etab hidden" data-t="9">
+      <h2>Mərhələ 9 — Mövcud sahələr və vəzifələr</h2>
+      <p class="sub">Portalda qeydə alınmış sahə və vəzifələrin siyahısı.</p>
+      <div id="catalog"></div>
+    </div>
+
+    <!-- 10 -->
+    <div class="card etab hidden" data-t="10">
+      <h2>Mərhələ 10 — Müsahibə təyin etmə</h2>
+      <p class="sub">Namizəd üçün müsahibə vaxtı və formatını təyin edin.</p>
+      <div class="row">
+        <div><label for="iCand">Namizəd</label><select id="iCand"></select></div>
+        <div><label for="iType">Format</label><select id="iType"><option>Üzbəüz</option><option>Onlayn</option><option>Telefon</option></select></div>
+        <div><label for="iDate">Tarix</label><input id="iDate" type="date"></div>
+        <div><label for="iTime">Saat</label><input id="iTime" type="time"></div>
+      </div>
+      <label for="iPlace">Məkan / link</label><input id="iPlace">
+      <div id="m10" class="msg"></div>
+      <div class="actions"><button class="btn" onclick="addInt()">Müsahibə təyin et</button></div>
+      <div id="intList"></div>
+    </div>
+
+    <!-- 11 -->
+    <div class="card etab hidden" data-t="11">
+      <h2>Mərhələ 11 — Yekun qiymətləndirmə meyarları</h2>
+      <p class="sub">Meyarların çəkisi cəmi 100% olmalıdır.</p>
+      <div id="crit"></div>
+      <div class="actions"><button class="btn sec" onclick="addCrit()">+ Meyar əlavə et</button></div>
+      <p>Cəmi: <b id="critSum">0</b>%</p>
+      <div id="m11" class="msg"></div>
+      <div class="actions"><button class="btn" onclick="saveCrit()">Meyarları təsdiqlə</button></div>
+      <div id="scoreBox"></div>
+    </div>
+
+    <!-- 12 -->
+    <div class="card etab hidden" data-t="12">
+      <h2>Mərhələ 12 — Qaydalar və şərtlər</h2>
+      <p class="sub">Məlumat bazası. Axtarış edin.</p>
+      <input id="kbQ" placeholder="Açar söz yazın…" oninput="renderKB()" aria-label="Qaydalarda axtarış">
+      <div id="kb"></div>
+    </div>
+  </section>
+</div>
+
+<footer>İşSiz.gov — nümunə alt sistem. MyGov inteqrasiyası rəsmi API qoşulana qədər simulyasiyadır.</footer>
+
+<script>
+/* ============ Məlumat (yaddaşda; real layihədə backend/DB ilə əvəz edin) ============ */
+const FIELDS={
+ "İnformasiya texnologiyaları":["Proqramçı","Sistem administratoru","Verilənlər analitiki","UI/UX dizayner"],
+ "Maliyyə və mühasibat":["Mühasib","Maliyyə analitiki","Kredit mütəxəssisi"],
+ "Səhiyyə":["Həkim","Tibb bacısı","Əczaçı"],
+ "Təhsil":["Müəllim","Tərbiyəçi","Tədris metodisti"],
+ "Tikinti və mühəndislik":["İnşaat mühəndisi","Memar","Prorab"],
+ "Satış və marketinq":["Satış meneceri","Marketoloq","Müştəri xidmətləri operatoru"],
+ "Dövlət və hüquq":["Hüquqşünas","Kargüzar","İnsan resursları mütəxəssisi"],
+ "Nəqliyyat və logistika":["Sürücü","Logistika meneceri","Anbardar"]
+};
+const DEG=["","Orta təhsil","Peşə təhsili","Orta ixtisas","Bakalavr","Magistr","Doktorantura"];
+const STATUSES=["Müraciət alındı","Nəzərdən keçirilir","Müsahibəyə dəvət","Təklif göndərildi","İşə qəbul edildi","Rədd edildi"];
+const RULES=[
+ ["Qeydiyyat qaydaları","İş axtaran yalnız öz FİN-i ilə qeydiyyatdan keçə bilər. Bir FİN üçün bir hesab açılır. Şəxsi məlumatlar MyGov vasitəsilə təsdiqlənir."],
+ ["Sənədlərin tələbləri","Təhsil sənədi PDF formatında, 5 MB-dan çox olmamalıdır. Saxta sənəd təqdim edilməsi hesabın bloklanmasına səbəb olur."],
+ ["Maaş gözləntisi","Maaş gözləntisi aylıq xalis məbləğ kimi 400–5000 AZN aralığında göstərilir."],
+ ["Vakansiya yerləşdirmə","Vakansiyada vəzifə, maaş vilkəsi, təhsil və təcrübə tələbləri açıq göstərilməlidir. Ayrı-seçkilik xarakterli şərtlərə yol verilmir."],
+ ["Müsahibə qaydaları","Müsahibə tarixi namizədə bildiriş kimi göndərilir. Namizəd vaxtı dəyişmək üçün ən azı 24 saat əvvəl müraciət edə bilər."],
+ ["İşə qəbul statusları","Status dəyişdikdə iş axtaran avtomatik məlumatlandırılır. Rədd qərarı üçün səbəb qeyd edilməsi tövsiyə olunur."],
+ ["Şəxsi məlumatların qorunması","Məlumatlar yalnız məşğulluq məqsədi ilə istifadə olunur və üçüncü şəxslərə verilmir."],
+ ["Əmək münasibətləri","İşə qəbul Əmək Məcəlləsinə uyğun, yazılı əmək müqaviləsi ilə rəsmiləşdirilir."]
+];
+const DB={seeker:null,vacancies:[],candidates:[
+ {name:"Aysel Məmmədova",field:"İnformasiya texnologiyaları",pos:"Proqramçı",deg:4,sal:1500,city:"Bakı",exp:3,status:0},
+ {name:"Elvin Quliyev",field:"Maliyyə və mühasibat",pos:"Mühasib",deg:4,sal:900,city:"Gəncə",exp:5,status:0},
+ {name:"Nigar Həsənova",field:"Təhsil",pos:"Müəllim",deg:5,sal:700,city:"Sumqayıt",exp:2,status:0}
+],interviews:[],criteria:[["Peşəkar bacarıqlar",40],["İş təcrübəsi",30],["Kommunikasiya",20],["Motivasiya",10]],exp:[]};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function msg(id,t,ok=true){const e=$(id);e.className="msg "+(ok?"ok":"err");e.textContent=t}
+
+/* ============ Rol keçidi ============ */
+function setRole(r){
+ $("seeker").classList.toggle("hidden",r!=="seeker");
+ $("employer").classList.toggle("hidden",r!=="employer");
+ $("r-seeker").setAttribute("aria-pressed",r==="seeker");
+ $("r-employer").setAttribute("aria-pressed",r==="employer");
+ if(r==="employer"){renderCand();renderStatus();renderCatalog();fillCandSelect();renderCrit();renderKB()}
+}
+
+/* ============ Sahə / vəzifə siyahıları ============ */
+function fillFields(id){$(id).innerHTML=Object.keys(FIELDS).map(f=>`<option>${esc(f)}</option>`).join("")}
+function fillPos(fid,pid){$(pid).innerHTML=FIELDS[$(fid).value].map(p=>`<option>${esc(p)}</option>`).join("")}
+["field","vField","sField"].forEach(fillFields);
+$("sField").insertAdjacentHTML("afterbegin",'<option value="">Hamısı</option>');$("sField").value="";
+fillPos("field","position");fillPos("vField","vPos");
+
+/* ============ İş axtaran: addımlar ============ */
+const STEP_NAMES=["1. Qeydiyyat","2. Təhsil","3. CV","4. Sahə","5. Maaş"];
+let cur=1;const done=new Set();
+function renderSteps(){
+ $("steps").innerHTML=STEP_NAMES.map((n,i)=>`<button class="${i+1===cur?"on":""} ${done.has(i+1)?"done":""}" onclick="goStep(${i+1})">${n}</button>`).join("");
+}
+function goStep(n){
+ if(n>1&&!DB.seeker){return}
+ cur=n;document.querySelectorAll(".step").forEach(s=>s.classList.toggle("hidden",+s.dataset.s!==n));
+ $("profile").classList.add("hidden");renderSteps();
+}
+renderSteps();
+
+/* Mərhələ 1 */
+function mygov(){
+ const fin=$("fin").value.trim().toUpperCase(),u=$("uname").value.trim();
+ if(!/^[A-Z0-9]{7}$/.test(fin))return msg("m1","FİN 7 simvoldan (rəqəm və latın hərfi) ibarət olmalıdır.",false);
+ if(u.length<3)return msg("m1","İstifadəçi adı ən azı 3 simvol olmalıdır.",false);
+ msg("m1","MyGov ilə əlaqə qurulur…");
+ /* TODO: Real inteqrasiya — MyGov / ASAN Login rəsmi API-si ilə əvəz edin (OAuth2 + server tərəfdə).
+    FİN brauzerdə saxlanmamalı, sorğu yalnız HTTPS ilə backend vasitəsilə göndərilməlidir. */
+ setTimeout(()=>{
+  DB.seeker={fin,uname:u,fullName:"(MyGov-dan gələn Ad Soyad Ata adı)",birth:"(MyGov-dan doğum tarixi)",address:"(MyGov-dan ünvan)"};
+  $("mygovBox").classList.remove("hidden");
+  $("mygovBox").innerHTML=`<b>MyGov-dan alınan məlumatlar (simulyasiya)</b>Ad, soyad: ${esc(DB.seeker.fullName)}<br>Doğum tarixi: ${esc(DB.seeker.birth)}<br>Ünvan: ${esc(DB.seeker.address)}<br>FİN: ${esc(fin)}`;
+  msg("m1","Məlumatlar uğurla alındı.");$("next1").disabled=false;done.add(1);renderSteps();
+ },700);
+}
+/* Mərhələ 2 */
+function saveEdu(){
+ const f=$("diploma").files[0];
+ if(!$("degree").value||!$("uni").value.trim()||!$("major").value.trim()||!$("gradYear").value)return msg("m2","Bütün təhsil sahələrini doldurun.",false);
+ if(!f)return msg("m2","Təsdiqedici PDF sənədi əlavə edin.",false);
+ if(f.type!=="application/pdf")return msg("m2","Yalnız PDF formatı qəbul olunur.",false);
+ if(f.size>5*1024*1024)return msg("m2","Fayl 5 MB-dan böyükdür.",false);
+ DB.seeker.edu={degree:$("degree").value,uni:$("uni").value,major:$("major").value,year:$("gradYear").value,file:f.name};
+ msg("m2","Təhsil məlumatı saxlanıldı.");done.add(2);renderSteps();setTimeout(()=>goStep(3),500);
+}
+/* Mərhələ 3 */
+function addExp(){
+ if(!$("company").value.trim()||!$("pos").value.trim())return msg("m3","Şirkət və vəzifəni yazın.",false);
+ DB.exp.push({c:$("company").value,p:$("pos").value,f:$("from").value,t:$("to").value,d:$("duty").value});
+ ["company","pos","from","to","duty"].forEach(i=>$(i).value="");
+ $("m3").className="msg";
+ $("expList").innerHTML=DB.exp.map(e=>`<div class="item"><b>${esc(e.p)} — ${esc(e.c)}</b>${esc(e.f)} – ${esc(e.t||"indi")}<br>${esc(e.d)}</div>`).join("");
+}
+function saveCV(){
+ const f=$("cv").files[0];
+ if(!f)return msg("m3","CV faylını yükləyin.",false);
+ if(!/\.(pdf|docx?)$/i.test(f.name))return msg("m3","CV yalnız PDF və ya DOCX ola bilər.",false);
+ if(f.size>5*1024*1024)return msg("m3","Fayl 5 MB-dan böyükdür.",false);
+ DB.seeker.cv=f.name;DB.seeker.exp=DB.exp;
+ msg("m3","CV və təcrübə saxlanıldı.");done.add(3);renderSteps();setTimeout(()=>goStep(4),500);
+}
+/* Mərhələ 4 */
+function savePref(){
+ DB.seeker.pref={field:$("field").value,pos:$("position").value,schedule:$("schedule").value,city:$("city").value};
+ msg("m4","Axtarış parametrləri saxlanıldı.");done.add(4);renderSteps();setTimeout(()=>goStep(5),500);
+}
+/* Mərhələ 5 */
+function salNote(v){
+ return v<800?"Başlanğıc səviyyə üçün real gözləntidir.":v<2000?"Orta səviyyə: təcrübə və ixtisas tələb olunur.":v<3500?"Yüksək gözlənti: güclü təcrübə və sertifikatlar vacibdir.":"Çox yüksək gözlənti: rəhbər və ya nadir ixtisas vəzifələri üçün.";
+}
+function salSet(v){v=Math.min(5000,Math.max(400,+v||400));$("sal").value=v;$("salNum").value=v;$("salVal").textContent=v;$("salNote").textContent=salNote(v);return v}
+function salChange(){salSet($("sal").value)}
+function salNumChange(){const v=+$("salNum").value;if(v>=400&&v<=5000)salSet(v)}
+salSet(1000);
+function finishSeeker(){
+ const v=+$("salNum").value;
+ if(!(v>=400&&v<=5000))return msg("m5","Maaş 400 ilə 5000 AZN arasında olmalıdır.",false);
+ DB.seeker.salary=v;done.add(5);renderSteps();msg("m5","Profil tamamlandı.");
+ const s=DB.seeker;
+ DB.candidates.push({name:s.uname,field:s.pref?.field||"",pos:s.pref?.pos||"",deg:DEG.indexOf(s.edu?.degree),sal:v,city:s.pref?.city||"",exp:s.exp?.length||0,status:0});
+ document.querySelectorAll(".step").forEach(x=>x.classList.add("hidden"));
+ $("profile").classList.remove("hidden");
+ $("profile").innerHTML=`<h2>Profiliniz hazırdır</h2>
+ <div class="item"><b>İstifadəçi</b>${esc(s.uname)} (FİN: ${esc(s.fin)})</div>
+ <div class="item"><b>Təhsil</b>${esc(s.edu?.degree)}, ${esc(s.edu?.uni)}, ${esc(s.edu?.major)} (${esc(s.edu?.year)})</div>
+ <div class="item"><b>CV və təcrübə</b>${esc(s.cv)} — ${s.exp?.length||0} iş yeri</div>
+ <div class="item"><b>Axtarılan sahə</b>${esc(s.pref?.field)} / ${esc(s.pref?.pos)} · ${esc(s.pref?.schedule)} · ${esc(s.pref?.city)}</div>
+ <div class="item"><b>Maaş gözləntisi</b>${v} AZN</div>`;
+}
+
+/* ============ İşəgötürən: tablar ============ */
+const ETABS={6:"Vakansiyalar",7:"Namizəd axtarışı",8:"İşə qəbul statusu",9:"Sahələr və vəzifələr",10:"Müsahibə",11:"Qiymətləndirmə",12:"Qaydalar"};
+$("etabs").innerHTML=Object.entries(ETABS).map(([k,v])=>`<button data-k="${k}" onclick="eTab(${k})" class="${k==6?"on":""}">${k}. ${v}</button>`).join("");
+function eTab(k){
+ document.querySelectorAll(".etab").forEach(e=>e.classList.toggle("hidden",+e.dataset.t!==k));
+ document.querySelectorAll("#etabs button").forEach(b=>b.classList.toggle("on",+b.dataset.k===k));
+ if(k===8)renderStatus();if(k===10)fillCandSelect();
+}
+
+/* Mərhələ 6 */
+function addVac(){
+ const mn=+$("vMin").value,mx=+$("vMax").value;
+ if(!$("vOrg").value.trim()||!$("vTitle").value.trim())return msg("m6","Təşkilat və vakansiya adını yazın.",false);
+ if(mn<400||mx>5000||mn>mx)return msg("m6","Maaş vilkəsi 400–5000 AZN daxilində və minimum ≤ maksimum olmalıdır.",false);
+ DB.vacancies.push({org:$("vOrg").value,title:$("vTitle").value,field:$("vField").value,pos:$("vPos").value,mn,mx,deg:$("vDeg").value,exp:$("vExp").value,dead:$("vDead").value,desc:$("vDesc").value});
+ msg("m6","Vakansiya yerləşdirildi.");renderVac();
+}
+function renderVac(){
+ $("vacList").innerHTML=DB.vacancies.map((v,i)=>`<div class="item"><b>${esc(v.title)} — ${esc(v.org)}</b>${esc(v.field)} / ${esc(v.pos)}<br>Maaş: ${v.mn}–${v.mx} AZN · ${esc(v.deg)} · ${esc(v.exp)} il təcrübə · Son tarix: ${esc(v.dead||"—")}<br>${esc(v.desc)}<div class="actions"><button class="btn red" onclick="DB.vacancies.splice(${i},1);renderVac()">Sil</button></div></div>`).join("");
+}
+/* Mərhələ 7 */
+function candCard(c,i,extra=""){return `<div class="item"><b>${esc(c.name)}</b>${esc(c.field)} / ${esc(c.pos)} · ${esc(DEG[c.deg]||"—")} · ${c.exp} iş yeri · ${esc(c.city)}<br>Maaş gözləntisi: ${c.sal} AZN ${extra}</div>`}
+function searchCand(){
+ const f=$("sField").value,d=+$("sDeg").value,m=+$("sMax").value||5000,c=$("sCity").value;
+ const r=DB.candidates.filter(x=>(!f||x.field===f)&&x.deg>=d&&x.sal<=m&&(!c||x.city===c));
+ $("candList").innerHTML=r.length?r.map(x=>candCard(x)).join(""):'<p class="hint">Uyğun namizəd tapılmadı. Filtrləri genişləndirin.</p>';
+}
+function renderCand(){searchCand()}
+/* Mərhələ 8 */
+function renderStatus(){
+ $("statusList").innerHTML=DB.candidates.map((c,i)=>candCard(c,i,`<br><label for="st${i}">Status</label><select id="st${i}" onchange="DB.candidates[${i}].status=this.selectedIndex;notify(${i})">${STATUSES.map((s,j)=>`<option ${j===c.status?"selected":""}>${s}</option>`).join("")}</select>`)).join("");
+}
+function notify(i){const c=DB.candidates[i];alert(`Bildiriş göndərildi → ${c.name}: "${STATUSES[c.status]}"`)}
+/* Mərhələ 9 */
+function renderCatalog(){
+ $("catalog").innerHTML=Object.entries(FIELDS).map(([f,p])=>`<details><summary>${esc(f)} (${p.length})</summary><p>${p.map(x=>`<span class="tag b">${esc(x)}</span>`).join(" ")}</p></details>`).join("");
+}
+/* Mərhələ 10 */
+function fillCandSelect(){$("iCand").innerHTML=DB.candidates.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("")}
+function addInt(){
+ if(!$("iDate").value||!$("iTime").value)return msg("m10","Tarix və saatı seçin.",false);
+ if(new Date($("iDate").value)<new Date(new Date().toDateString()))return msg("m10","Keçmiş tarix seçmək olmaz.",false);
+ const i=+$("iCand").value;DB.interviews.push({c:DB.candidates[i].name,t:$("iType").value,d:$("iDate").value,h:$("iTime").value,p:$("iPlace").value});
+ DB.candidates[i].status=2;msg("m10","Müsahibə təyin edildi, namizədə bildiriş göndərildi.");
+ $("intList").innerHTML=DB.interviews.map(x=>`<div class="item"><b>${esc(x.c)}</b>${esc(x.d)} ${esc(x.h)} · ${esc(x.t)} · ${esc(x.p)}</div>`).join("");
+}
+/* Mərhələ 11 */
+function renderCrit(){
+ $("crit").innerHTML=DB.criteria.map((c,i)=>`<div class="row"><div><label>Meyar</label><input value="${esc(c[0])}" oninput="DB.criteria[${i}][0]=this.value"></div><div><label>Çəki (%)</label><input type="number" min="0" max="100" value="${c[1]}" oninput="DB.criteria[${i}][1]=+this.value;sumCrit()"></div></div>`).join("");
+ sumCrit();
+}
+function sumCrit(){const s=DB.criteria.reduce((a,c)=>a+(+c[1]||0),0);$("critSum").textContent=s;$("critSum").style.color=s===100?"var(--ok)":"var(--red)";return s}
+function addCrit(){DB.criteria.push(["Yeni meyar",0]);renderCrit()}
+function saveCrit(){
+ if(sumCrit()!==100)return msg("m11","Çəkilərin cəmi 100% olmalıdır.",false);
+ msg("m11","Meyarlar təsdiqləndi. Hər namizəd üçün 0–10 bal verin.");
+ $("scoreBox").innerHTML=DB.candidates.map((c,i)=>`<div class="item"><b>${esc(c.name)}</b>${DB.criteria.map((k,j)=>`<label>${esc(k[0])} (${k[1]}%)</label><input type="number" min="0" max="10" step="0.5" data-c="${i}" data-k="${j}" oninput="calc(${i})">`).join("")}<p>Yekun bal: <b id="tot${i}">—</b> / 10</p></div>`).join("");
+}
+function calc(i){
+ let t=0;document.querySelectorAll(`input[data-c="${i}"]`).forEach(inp=>{const v=Math.min(10,Math.max(0,+inp.value||0));t+=v*DB.criteria[inp.dataset.k][1]/100});
+ $("tot"+i).textContent=t.toFixed(2);
+}
+/* Mərhələ 12 */
+function renderKB(){
+ const q=$("kbQ").value.toLowerCase();
+ $("kb").innerHTML=RULES.filter(r=>!q||(r[0]+r[1]).toLowerCase().includes(q)).map(r=>`<details><summary>${esc(r[0])}</summary><p>${esc(r[1])}</p></details>`).join("")||'<p class="hint">Nəticə tapılmadı.</p>';
+}
+renderKB();
+</script>
+</body>
+</html>
